@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Exercise, WeeklyPlan } from '@/types/types';
+import { Exercise, WeeklyPlan, DailyWorkout } from '@/types/types';
 
 type CompletedExercise = Exercise & {
   completedSets: number;
@@ -18,6 +18,9 @@ type WorkoutState = {
   resetWorkout: () => void;
   setWeeklyPlan: (plan: WeeklyPlan) => void;
   setTodayWorkoutFromPlan: () => void;
+  history: DailyWorkout[];
+  setHistory: (history: DailyWorkout[]) => void;
+  addToHistory: (workout: DailyWorkout) => void
 };
 
 export const useWorkoutStore = create<WorkoutState>()(
@@ -26,6 +29,14 @@ export const useWorkoutStore = create<WorkoutState>()(
       plannedExercises: [],
       completedExercises: [],
       weeklyPlan: {},
+      history: [],
+
+    setHistory: (history) => set({ history }),
+
+    addToHistory: (workout) => {
+      const updated = [...get().history, workout];
+      set({ history: updated });
+    },
 
       setPlannedExercises: (exercises) =>
         set({ plannedExercises: exercises, completedExercises: [] }),
@@ -75,7 +86,7 @@ export const useWorkoutStore = create<WorkoutState>()(
       setTodayWorkoutFromPlan: () => {
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
         const todayPlan = get().weeklyPlan[today] || [];
-        set({ plannedExercises: todayPlan, completedExercises: [] });
+        // set({ plannedExercises: todayPlan, completedExercises: [] });
       },
     }),
     {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, Button, TextInput } from "react-native-paper";
+import { Text, Button, TextInput, IconButton } from "react-native-paper";
 import { daysOfWeek } from "@/constants/data";
 import { Exercise, WeeklyPlan } from "@/types/types";
 import { useWorkoutStore } from "@/store/workoutStore";
@@ -35,6 +35,14 @@ export default function PlanScreen() {
     setExerciseName("");
     setSets("3");
     setReps("10");
+  };
+
+  const clearDayPlan = () => {
+    setPlan((prev) => {
+      const updated = { ...prev };
+      delete updated[selectedDay];
+      return updated;
+    });
   };
 
   const savePlan = () => {
@@ -139,16 +147,49 @@ export default function PlanScreen() {
           Add Exercise
         </Button>
 
+        <Button
+          mode="outlined"
+          onPress={clearDayPlan}
+          style={{ marginTop: 8, borderColor: "#ff4d4f" }}
+          textColor="#ff4d4f"
+        >
+          Clear {selectedDay}'s Plan
+        </Button>
+
         {plan[selectedDay]?.length > 0 && (
           <View style={{ marginTop: 16 }}>
             <Text variant="titleMedium" style={{ color: "#fff", marginBottom: 8 }}>
               Exercises for {selectedDay}:
             </Text>
             {plan[selectedDay].map((ex, idx) => (
-              <Text key={idx} style={{ color: "#fff" }}>
-                • {ex.name} ({ex.sets}x{ex.reps})
-              </Text>
-            ))}
+  <View
+    key={idx}
+    style={{
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 2,
+    }}
+  >
+    <Text style={{ color: "#fff", flex: 1 }}>
+      • {ex.name} ({ex.sets}x{ex.reps})
+    </Text>
+    <IconButton
+      icon="close"
+      iconColor="#ff4d4f"
+      size={20}
+      onPress={() => {
+        setPlan((prev) => {
+          const updatedDay = [...(prev[selectedDay] || [])];
+          updatedDay.splice(idx, 1);
+          return { ...prev, [selectedDay]: updatedDay };
+        });
+      }}
+    />
+  </View>
+))}
+
+
           </View>
         )}
       </ScrollView>

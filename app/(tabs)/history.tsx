@@ -4,16 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from 'react-native-paper';
 import { getWorkoutHistory } from '@/storage/storage';
 import { DailyWorkout } from '@/types/types';
+import { useWorkoutStore } from '@/store/workoutStore';
 
 export default function HistoryScreen() {
-  const [history, setHistory] = useState<DailyWorkout[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      const logs = await getWorkoutHistory();
-      setHistory(logs);
-    })();
-  }, []);
+  const history = useWorkoutStore((state) => state.history);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>

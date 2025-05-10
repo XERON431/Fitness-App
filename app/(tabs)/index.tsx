@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput as RNTextInput,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, Button } from 'react-native-paper';
@@ -24,6 +25,7 @@ export default function HomeScreen() {
     setTodayWorkoutFromPlan,
     toggleCompleteExercise,
     updateCompletedExercise,
+    addToHistory,
     weeklyPlan,
   } = useWorkoutStore();
   const initialized = useRef(false);
@@ -33,45 +35,73 @@ const onRefresh = () => {
   setRefreshing(true);
   const today = getCurrentDay();
   const todayPlan = weeklyPlan[today] || [];
-  setPlannedExercises(todayPlan);
+  setPlannedExercises(todayPlan && todayPlan.length > 0 ? todayPlan : defaultExercises);
   setRefreshing(false);
 };
 
   const [isFinished, setIsFinished] = useState(false);
   useEffect(() => {
-    console.log("bruuuhh");
-    AsyncStorage.clear();
-    alert('AsyncStorage cleared!');
     if (!initialized.current) {
       const today = getCurrentDay(); // e.g., "Monday"
       const todayPlan = weeklyPlan[today] || [];
-      setPlannedExercises(todayPlan);
+      setPlannedExercises(todayPlan && todayPlan.length > 0 ? todayPlan : defaultExercises);
       initialized.current = true;
     }
   }, []);
 
-  if (plannedExercises.length === 0 && completedExercises.length === 0) {
-    setTodayWorkoutFromPlan();
-  }
+  useEffect(() => {
+    if (
+      plannedExercises.length === 0 &&
+      completedExercises.length === 0 &&
+      initialized.current
+    ) {
+      setTodayWorkoutFromPlan();
+    }
+  }, [plannedExercises, completedExercises]);
+  
 
   const handleFinish = async () => {
-    const todayWorkout: DailyWorkout = {
-      date: new Date().toISOString().split('T')[0],
-      exercises: completedExercises.map((ex) => ({
-        name: ex.name,
-        sets: ex.completedSets,
-        reps: ex.completedReps,
-      })),
-      completed: completedExercises.map(() => true),
+    const isIncomplete = plannedExercises.length > 0;
+  
+    const proceedToFinish = async () => {
+      const todayWorkout: DailyWorkout = {
+        date: new Date().toISOString().split('T')[0],
+        exercises: completedExercises.map((ex) => ({
+          name: ex.name,
+          sets: ex.completedSets,
+          reps: ex.completedReps,
+        })),
+        completed: completedExercises.map(() => true),
+      };
+      await logWorkout(todayWorkout);
+      addToHistory(todayWorkout);
+      alert('Workout logged!');
+      setIsFinished(true);
     };
-    await logWorkout(todayWorkout);
-    alert('Workout logged!');
-    setIsFinished(true);
+  
+    if (isIncomplete) {
+      Alert.alert(
+        "Incomplete Workout",
+        "You haven't completed all exercises. Are you sure you want to finish?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Finish Anyway", onPress: proceedToFinish }
+        ]
+      );
+    } else {
+      proceedToFinish();
+    }
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
-      <ScrollView contentContainerStyle={styles.container} >
+      <ScrollView contentContainerStyle={styles.container} refreshControl={
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      tintColor="#fff"
+    />
+  }>
         <View style={styles.headerRow}>
           <Text style={styles.headerText}>Today's Workout</Text>
           <Button
