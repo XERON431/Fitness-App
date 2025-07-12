@@ -21,6 +21,8 @@ type WorkoutState = {
   history: DailyWorkout[];
   setHistory: (history: DailyWorkout[]) => void;
   addToHistory: (workout: DailyWorkout) => void
+  hasHydrated: boolean;
+  setHasHydrated: (v: boolean) => void;
 };
 
 export const useWorkoutStore = create<WorkoutState>()(
@@ -30,6 +32,8 @@ export const useWorkoutStore = create<WorkoutState>()(
       completedExercises: [],
       weeklyPlan: {},
       history: [],
+      hasHydrated: false,
+      setHasHydrated: (v: boolean) => set({ hasHydrated: v }),
 
     setHistory: (history) => set({ history }),
 
@@ -86,12 +90,15 @@ export const useWorkoutStore = create<WorkoutState>()(
       setTodayWorkoutFromPlan: () => {
         const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
         const todayPlan = get().weeklyPlan[today] || [];
-        // set({ plannedExercises: todayPlan, completedExercises: [] });
+        set({ plannedExercises: todayPlan, completedExercises: [] });
       },
     }),
     {
       name: 'workout-store',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
